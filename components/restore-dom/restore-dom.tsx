@@ -20,9 +20,9 @@ const MUTATION_OBSERVER_CONFIG: MutationObserverInit = {
 };
 
 type RestoreDOMProps = {
+  children?: ReactNode;
   receivedUserInput: RefObject<boolean>;
   node: RefObject<HTMLDivElement>;
-  children?: ReactNode;
 };
 
 // We have to use a class component here since we rely on `getSnapshotBeforeUpdate` which has no FC equivalent
@@ -77,7 +77,6 @@ class RestoreDOMComponent extends Component<RestoreDOMProps> {
   }
 
   render() {
-    // @ts-ignore - MIGRATION
     return this.props.children;
   }
 }

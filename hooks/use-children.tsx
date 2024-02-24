@@ -1,3 +1,4 @@
+import { JSX } from "preact";
 import { Ancestor, Descendant, Editor, Element, Range } from "slate";
 import {
   RenderElementProps,

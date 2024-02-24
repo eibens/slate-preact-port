@@ -25,7 +25,6 @@ import {
   Text,
   Transforms,
 } from "slate";
-import { AndroidInputManager } from "../hooks/android-input-manager/android-input-manager.ts";
 import { useAndroidInputManager } from "../hooks/android-input-manager/use-android-input-manager.ts";
 import useChildren from "../hooks/use-children.tsx";
 import { DecorateContext } from "../hooks/use-decorate.ts";
@@ -73,6 +72,7 @@ import {
   PLACEHOLDER_SYMBOL,
 } from "../utils/weak-maps.ts";
 import { RestoreDOM } from "./restore-dom/restore-dom.tsx";
+import { AndroidInputManager } from "../hooks/android-input-manager/android-input-manager.ts";
 
 type DeferredOperation = () => void;
 
@@ -152,7 +152,7 @@ export const Editable = (props: EditableProps) => {
     disableDefaultStyles = false,
     ...attributes
   } = props;
-  const editor = useSlate();
+  const editor = useSlate() as ReactEditor;
   // Rerender editor when composition status changed
   const [isComposing, setIsComposing] = useState(false);
   const ref = useRef<HTMLDivElement | null>(null);
@@ -293,7 +293,6 @@ export const Editable = (props: EditableProps) => {
     // Make sure the DOM selection state is in sync.
     const { selection } = editor;
     const root = ReactEditor.findDocumentOrShadowRoot(editor);
-    // @ts-ignore - MIGRATION
     const domSelection = root.getSelection();
 
     if (
@@ -312,12 +311,33 @@ export const Editable = (props: EditableProps) => {
         return;
       }
 
+      // Get anchorNode and focusNode
+      const focusNode = domSelection.focusNode;
+      let anchorNode;
+
+      // COMPAT: In firefox the normal seletion way does not work
+      // (https://github.com/ianstormtaylor/slate/pull/5486#issue-1820720223)
+      if (IS_FIREFOX && domSelection.rangeCount > 1) {
+        const firstRange = domSelection.getRangeAt(0);
+        const lastRange = domSelection.getRangeAt(domSelection.rangeCount - 1);
+
+        // Right to left
+        if (firstRange.startContainer === focusNode) {
+          anchorNode = lastRange.endContainer;
+        } else {
+          // Left to right
+          anchorNode = firstRange.startContainer;
+        }
+      } else {
+        anchorNode = domSelection.anchorNode;
+      }
+
       // verify that the dom selection is in the editor
       const editorElement = EDITOR_TO_ELEMENT.get(editor)!;
       let hasDomSelectionInEditor = false;
       if (
-        editorElement.contains(domSelection.anchorNode) &&
-        editorElement.contains(domSelection.focusNode)
+        editorElement.contains(anchorNode) &&
+        editorElement.contains(focusNode)
       ) {
         hasDomSelectionInEditor = true;
       }
@@ -343,7 +363,6 @@ export const Editable = (props: EditableProps) => {
           }
 
           // Ensure selection is inside the mark placeholder
-          const { anchorNode } = domSelection;
           if (
             anchorNode?.parentElement?.hasAttribute(
               "data-slate-mark-placeholder",
@@ -373,7 +392,7 @@ export const Editable = (props: EditableProps) => {
         ReactEditor.toDOMRange(editor, selection);
 
       if (newDomRange) {
-        if (ReactEditor.isComposing(editor)) {
+        if (ReactEditor.isComposing(editor) && !IS_ANDROID) {
           domSelection.collapseToEnd();
         } else if (Range.isBackward(selection!)) {
           domSelection.setBaseAndExtent(
@@ -398,19 +417,16 @@ export const Editable = (props: EditableProps) => {
       return newDomRange;
     };
 
-    const newDomRange = setDomSelection();
+    // In firefox if there is more then 1 range and we call setDomSelection we remove the ability to select more cells in a table
+    if (domSelection.rangeCount <= 1) {
+      setDomSelection();
+    }
+
     const ensureSelection =
       androidInputManagerRef.current?.isFlushing() === "action";
 
     if (!IS_ANDROID || !ensureSelection) {
       setTimeout(() => {
-        // COMPAT: In Firefox, it's not enough to create a range, you also need
-        // to focus the contenteditable element too. (2016/11/16)
-        if (newDomRange && IS_FIREFOX) {
-          const el = ReactEditor.toDOMNode(editor, editor);
-          el.focus();
-        }
-
         state.isUpdatingSelection = false;
       });
       return;
@@ -534,7 +550,7 @@ export const Editable = (props: EditableProps) => {
               .createTreeWalker(anchorNode, NodeFilter.SHOW_TEXT)
               .lastChild() as DOMText | null;
 
-            if (lastText === node && lastText.textContent?.length === offset) {
+            if (lastText === node && lastText!.textContent?.length === offset) {
               native = false;
             }
           }
@@ -733,8 +749,7 @@ export const Editable = (props: EditableProps) => {
   );
 
   const callbackRef = useCallback(
-    // @ts-ignore - MIGRATION
-    (node) => {
+    (node: HTMLDivElement | null) => {
       if (node == null) {
         onDOMSelectionChange.cancel();
         scheduleOnDOMSelectionChange.cancel();
@@ -874,6 +889,7 @@ export const Editable = (props: EditableProps) => {
           <Component
             role={readOnly ? undefined : "textbox"}
             aria-multiline={readOnly ? undefined : true}
+            {...attributes}
             // COMPAT: Certain browsers don't support the `beforeinput` event, so we'd
             // have to use hacks to make these replacement-based features work.
             // For SSR situations HAS_BEFORE_INPUT_SUPPORT is false and results in prop
@@ -1019,7 +1035,6 @@ export const Editable = (props: EditableProps) => {
                 // editable element no longer has focus. Refer to:
                 // https://stackoverflow.com/questions/12353247/force-contenteditable-div-to-stop-accepting-input-after-it-loses-focus-under-web
                 if (IS_WEBKIT) {
-                  // @ts-ignore - MIGRATION
                   const domSelection = root.getSelection();
                   domSelection?.removeAllRanges();
                 }
@@ -1101,8 +1116,10 @@ export const Editable = (props: EditableProps) => {
               (event: React.CompositionEvent<HTMLDivElement>) => {
                 if (ReactEditor.hasSelectableTarget(editor, event.target)) {
                   if (ReactEditor.isComposing(editor)) {
-                    setIsComposing(false);
-                    IS_COMPOSING.set(editor, false);
+                    Promise.resolve().then(() => {
+                      setIsComposing(false);
+                      IS_COMPOSING.set(editor, false);
+                    });
                   }
 
                   androidInputManagerRef.current?.handleCompositionEnd(event);
@@ -1127,9 +1144,7 @@ export const Editable = (props: EditableProps) => {
                     event.data
                   ) {
                     const placeholderMarks = EDITOR_TO_PENDING_INSERTION_MARKS
-                      .get(
-                        editor,
-                      );
+                      .get(editor);
                     EDITOR_TO_PENDING_INSERTION_MARKS.delete(editor);
 
                     // Ensure we insert text with the marks the user was actually seeing
@@ -1181,26 +1196,9 @@ export const Editable = (props: EditableProps) => {
                   setIsComposing(true);
 
                   const { selection } = editor;
-                  if (selection) {
-                    if (Range.isExpanded(selection)) {
-                      Editor.deleteFragment(editor);
-                      return;
-                    }
-                    const inline = Editor.above(editor, {
-                      match: (n) =>
-                        Element.isElement(n) && Editor.isInline(editor, n),
-                      mode: "highest",
-                    });
-                    if (inline) {
-                      const [, inlinePath] = inline;
-                      if (Editor.isEnd(editor, selection.anchor, inlinePath)) {
-                        const point = Editor.after(editor, inlinePath)!;
-                        Transforms.setSelection(editor, {
-                          anchor: point,
-                          focus: point,
-                        });
-                      }
-                    }
+                  if (selection && Range.isExpanded(selection)) {
+                    Editor.deleteFragment(editor);
+                    return;
                   }
                 }
               },
@@ -1499,7 +1497,9 @@ export const Editable = (props: EditableProps) => {
                     if (selection && Range.isCollapsed(selection)) {
                       Transforms.move(editor, { reverse: !isRTL });
                     } else {
-                      Transforms.collapse(editor, { edge: "start" });
+                      Transforms.collapse(editor, {
+                        edge: isRTL ? "end" : "start",
+                      });
                     }
 
                     return;
@@ -1511,7 +1511,9 @@ export const Editable = (props: EditableProps) => {
                     if (selection && Range.isCollapsed(selection)) {
                       Transforms.move(editor, { reverse: isRTL });
                     } else {
-                      Transforms.collapse(editor, { edge: "end" });
+                      Transforms.collapse(editor, {
+                        edge: isRTL ? "start" : "end",
+                      });
                     }
 
                     return;

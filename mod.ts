@@ -12,13 +12,13 @@ export { Slate } from "./components/slate.tsx";
 
 // Hooks
 export { useEditor } from "./hooks/use-editor.tsx";
+export { useSlateStatic } from "./hooks/use-slate-static.tsx";
 export { useFocused } from "./hooks/use-focused.ts";
 export { useReadOnly } from "./hooks/use-read-only.ts";
 export { useSelected } from "./hooks/use-selected.ts";
-export { useSlateSelection } from "./hooks/use-slate-selection.tsx";
-export { useSlateSelector } from "./hooks/use-slate-selector.tsx";
-export { useSlateStatic } from "./hooks/use-slate-static.tsx";
 export { useSlate, useSlateWithV } from "./hooks/use-slate.tsx";
+export { useSlateSelector } from "./hooks/use-slate-selector.tsx";
+export { useSlateSelection } from "./hooks/use-slate-selection.tsx";
 
 // Plugin
 export { ReactEditor } from "./plugin/react-editor.ts";

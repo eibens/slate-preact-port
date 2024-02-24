@@ -1,3 +1,4 @@
+// deno-lint-ignore-file no-explicit-any
 import {
   createContext,
   useCallback,
@@ -9,7 +10,7 @@ import {
 import { Editor } from "slate";
 import { useIsomorphicLayoutEffect } from "./use-isomorphic-layout-effect.ts";
 
-function isError(error: unknown): error is Error {
+function isError(error: any): error is Error {
   return error instanceof Error;
 }
 
@@ -21,10 +22,9 @@ type EditorChangeHandler = (editor: Editor) => void;
 export const SlateSelectorContext = createContext<{
   getSlate: () => Editor;
   addEventListener: (callback: EditorChangeHandler) => () => void;
-  // deno-lint-ignore no-explicit-any
 }>({} as any);
 
-const refEquality = (a: unknown, b: unknown) => a === b;
+const refEquality = (a: any, b: any) => a === b;
 
 /**
  * use redux style selectors to prevent rerendering on every keystroke.
@@ -49,10 +49,8 @@ export function useSlateSelector<T>(
   const { getSlate, addEventListener } = context;
 
   const latestSubscriptionCallbackError = useRef<Error | undefined>();
-  // deno-lint-ignore no-explicit-any
   const latestSelector = useRef<(editor: Editor) => T>(() => null as any);
-  // deno-lint-ignore no-explicit-any
-  const latestSelectedState = useRef<T>((null as any) as T);
+  const latestSelectedState = useRef<T>(null as any as T);
   let selectedState: T;
 
   try {
@@ -94,7 +92,11 @@ export function useSlateSelector<T>(
           // is re-rendered, the selectors are called again, and
           // will throw again, if neither props nor store state
           // changed
-          latestSubscriptionCallbackError.current = err;
+          if (err instanceof Error) {
+            latestSubscriptionCallbackError.current = err;
+          } else {
+            latestSubscriptionCallbackError.current = new Error(String(err));
+          }
         }
 
         // @ts-ignore MIGRATION

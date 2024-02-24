@@ -1,13 +1,13 @@
 import { RefObject, useState } from "react";
+import { useSlateStatic } from "../use-slate-static.tsx";
 import { IS_ANDROID } from "../../utils/environment.ts";
 import { EDITOR_TO_SCHEDULE_FLUSH } from "../../utils/weak-maps.ts";
-import { useIsMounted } from "../use-is-mounted.tsx";
-import { useMutationObserver } from "../use-mutation-observer.ts";
-import { useSlateStatic } from "../use-slate-static.tsx";
 import {
   createAndroidInputManager,
   CreateAndroidInputManagerOptions,
 } from "./android-input-manager.ts";
+import { useIsMounted } from "../use-is-mounted.tsx";
+import { useMutationObserver } from "../use-mutation-observer.ts";
 
 type UseAndroidInputManagerOptions =
   & {

@@ -1,12 +1,10 @@
 import React from "react";
 
-export const IS_REACT_VERSION_17_OR_ABOVE =
-  parseInt(React.version.split(".")[0], 10) >= 17;
+export const REACT_MAJOR_VERSION = parseInt(React.version.split(".")[0], 10);
 
 export const IS_IOS = typeof navigator !== "undefined" &&
   typeof window !== "undefined" &&
   /iPad|iPhone|iPod/.test(navigator.userAgent) &&
-  // @ts-ignore - MIGRATION
   !window.MSStream;
 
 export const IS_APPLE = typeof navigator !== "undefined" &&
@@ -47,9 +45,10 @@ export const IS_FIREFOX_LEGACY = typeof navigator !== "undefined" &&
 export const IS_UC_MOBILE = typeof navigator !== "undefined" &&
   /.*UCBrowser/.test(navigator.userAgent);
 
-// Wechat browser
+// Wechat browser (not including mac wechat)
 export const IS_WECHATBROWSER = typeof navigator !== "undefined" &&
-  /.*Wechat/.test(navigator.userAgent);
+  /.*Wechat/.test(navigator.userAgent) &&
+  !/.*MacWechat/.test(navigator.userAgent); // avoid lookbehind (buggy in safari < 16.4)
 
 // Check if DOM is available as React does internally.
 // https://github.com/facebook/react/blob/master/packages/shared/ExecutionEnvironment.js
@@ -66,6 +65,6 @@ export const HAS_BEFORE_INPUT_SUPPORT =
   !IS_EDGE_LEGACY &&
   // globalThis is undefined in older browsers
   typeof globalThis !== "undefined" &&
-  window.InputEvent &&
+  globalThis.InputEvent &&
   // @ts-ignore The `getTargetRanges` property isn't recognized.
-  typeof window.InputEvent.prototype.getTargetRanges === "function";
+  typeof globalThis.InputEvent.prototype.getTargetRanges === "function";

@@ -5,6 +5,7 @@ import {
   Node,
   Operation,
   Path,
+  PathRef,
   Point,
   Range,
   Transforms,
@@ -120,6 +121,7 @@ export const withReact = <T extends BaseEditor>(
   // as apply() changes the object reference and hence invalidates the NODE_TO_KEY entry
   e.apply = (op: Operation) => {
     const matches: [Path, Key][] = [];
+    const pathRefMatches: [PathRef, Key][] = [];
 
     const pendingDiffs = EDITOR_TO_PENDING_DIFFS.get(e);
     if (pendingDiffs?.length) {
@@ -181,6 +183,21 @@ export const withReact = <T extends BaseEditor>(
           Path.parent(op.newPath),
         );
         matches.push(...getMatches(e, commonPath));
+
+        let changedPath: Path;
+        if (Path.isBefore(op.path, op.newPath)) {
+          matches.push(...getMatches(e, Path.parent(op.path)));
+          changedPath = op.newPath;
+        } else {
+          matches.push(...getMatches(e, Path.parent(op.newPath)));
+          changedPath = op.path;
+        }
+
+        const changedNode = Node.get(editor, Path.parent(changedPath));
+        const changedNodeKey = ReactEditor.findKey(e, changedNode);
+        const changedPathRef = Editor.pathRef(e, Path.parent(changedPath));
+        pathRefMatches.push([changedPathRef, changedNodeKey]);
+
         break;
       }
     }
@@ -190,6 +207,13 @@ export const withReact = <T extends BaseEditor>(
     for (const [path, key] of matches) {
       const [node] = Editor.node(e, path);
       NODE_TO_KEY.set(node, key);
+    }
+
+    for (const [pathRef, key] of pathRefMatches) {
+      if (pathRef.current) {
+        const [node] = Editor.node(e, pathRef.current);
+        NODE_TO_KEY.set(node, key);
+      }
     }
   };
 
@@ -322,10 +346,13 @@ export const withReact = <T extends BaseEditor>(
   };
 
   e.onChange = (options) => {
+    // NOTE(eibens): Slate has some logic here to guarantee batched updates.
+    // Preact should batch by default.
+    // https://github.com/preactjs/preact/issues/1944#issuecomment-534537469
     const onContextChange = EDITOR_TO_ON_CHANGE.get(e);
 
     if (onContextChange) {
-      onContextChange();
+      onContextChange(options);
     }
 
     onChange(options);

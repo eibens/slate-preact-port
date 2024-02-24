@@ -1,3 +1,4 @@
+// deno-lint-ignore-file no-explicit-any
 import type React from "https://esm.sh/react@18.2.0";
 import { Editor, Node, Path, Point, Range, Text, Transforms } from "slate";
 import { ReactEditor } from "../../plugin/react-editor.ts";
@@ -42,7 +43,7 @@ const FLUSH_DELAY = 200;
 const debug = (..._: unknown[]) => {};
 
 // Type guard to check if a value is a DataTransfer
-const isDataTransfer = (value: unknown): value is DataTransfer =>
+const isDataTransfer = (value: any): value is DataTransfer =>
   value?.constructor.name === "DataTransfer";
 
 export type CreateAndroidInputManagerOptions = {
@@ -353,8 +354,8 @@ export function createAndroidInputManager({
 
     const { inputType: type } = event;
     let targetRange: Range | null = null;
-    const data: DataTransfer | string | undefined = (event).dataTransfer ||
-      event.data || undefined;
+    const data: DataTransfer | string | undefined =
+      (event as any).dataTransfer || event.data || undefined;
 
     if (
       insertPositionHint !== false &&
@@ -364,7 +365,7 @@ export function createAndroidInputManager({
       insertPositionHint = false;
     }
 
-    let [nativeTargetRange] = event.getTargetRanges();
+    let [nativeTargetRange] = (event as any).getTargetRanges();
     if (nativeTargetRange) {
       targetRange = ReactEditor.toSlateRange(editor, nativeTargetRange, {
         exactMatch: false,
@@ -377,7 +378,6 @@ export function createAndroidInputManager({
     const window = ReactEditor.getWindow(editor);
     const domSelection = window.getSelection();
     if (!targetRange && domSelection) {
-      // @ts-ignore MIGRATION
       nativeTargetRange = domSelection;
       targetRange = ReactEditor.toSlateRange(editor, domSelection, {
         exactMatch: false,
@@ -497,9 +497,7 @@ export function createAndroidInputManager({
         // we are most likely deleting a zero-width placeholder and thus should perform it
         // as an action to ensure correct behavior (mostly happens with mark placeholders)
         const nativeCollapsed = isDOMSelection(nativeTargetRange)
-          // @ts-ignore MIGRATION
           ? nativeTargetRange.isCollapsed
-          // @ts-ignore MIGRATION
           : !!nativeTargetRange?.collapsed;
 
         if (

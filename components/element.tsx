@@ -1,5 +1,5 @@
 import getDirection from "direction";
-import React, { useCallback } from "react";
+import React, { JSX, useCallback } from "react";
 import { Editor, Element as SlateElement, Node, Range } from "slate";
 import useChildren from "../hooks/use-children.tsx";
 import { ReactEditor, useReadOnly, useSlateStatic } from "../mod.ts";

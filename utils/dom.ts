@@ -27,9 +27,9 @@ export {
 
 declare global {
   interface Window {
-    Selection: typeof Selection["constructor"];
-    DataTransfer: typeof DataTransfer["constructor"];
-    Node: typeof Node["constructor"];
+    Selection: (typeof Selection)["constructor"];
+    DataTransfer: (typeof DataTransfer)["constructor"];
+    Node: (typeof Node)["constructor"];
   }
 }
 
@@ -295,13 +295,12 @@ export const isTrackedMutation = (
   }
 
   const parentMutation = batch.find(({ addedNodes, removedNodes }) => {
-    // @ts-ignore MIGRATION
     for (const node of addedNodes) {
       if (node === target || node.contains(target)) {
         return true;
       }
     }
-    // @ts-ignore MIGRATION
+
     for (const node of removedNodes) {
       if (node === target || node.contains(target)) {
         return true;
