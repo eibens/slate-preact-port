@@ -1,6 +1,6 @@
-import getDirection from "direction";
 import React, { JSX, useCallback } from "react";
 import { Editor, Element as SlateElement, Node, Range } from "slate";
+import { getDirection } from "../deps.ts";
 import useChildren from "../hooks/use-children.tsx";
 import { ReactEditor, useReadOnly, useSlateStatic } from "../mod.ts";
 import { isElementDecorationsEqual } from "../utils/range-list.ts";
@@ -17,7 +17,7 @@ import {
   RenderPlaceholderProps,
 } from "./editable.tsx";
 
-import { ComponentChildren } from "preact";
+import { ReactNode } from "react";
 import Text from "./text.tsx";
 
 /**
@@ -59,7 +59,7 @@ const Element = (props: {
     },
     [editor, key, element],
   );
-  let children: ComponentChildren = useChildren({
+  let children: ReactNode = useChildren({
     decorations,
     node: element,
     renderElement,

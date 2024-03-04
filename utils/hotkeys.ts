@@ -1,4 +1,4 @@
-import { isHotkey } from "is-hotkey";
+import { isHotkey } from "../deps.ts";
 import { IS_APPLE } from "./environment.ts";
 
 /**

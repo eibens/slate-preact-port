@@ -1,11 +1,8 @@
 // deno-lint-ignore-file no-explicit-any
 
-import { FunctionalComponent, JSX } from "preact";
+import { FunctionComponent, JSX } from "react";
 import React from "react";
 
-import getDirection from "direction";
-import debounce from "lodash/debounce";
-import throttle from "lodash/throttle";
 import {
   useCallback,
   useEffect,
@@ -14,7 +11,6 @@ import {
   useRef,
   useState,
 } from "react";
-import scrollIntoView from "scroll-into-view-if-needed";
 import {
   Editor,
   Element,
@@ -25,6 +21,8 @@ import {
   Text,
   Transforms,
 } from "slate";
+import { debounce, getDirection, scrollIntoView, throttle } from "../deps.ts";
+import { AndroidInputManager } from "../hooks/android-input-manager/android-input-manager.ts";
 import { useAndroidInputManager } from "../hooks/android-input-manager/use-android-input-manager.ts";
 import useChildren from "../hooks/use-children.tsx";
 import { DecorateContext } from "../hooks/use-decorate.ts";
@@ -72,7 +70,6 @@ import {
   PLACEHOLDER_SYMBOL,
 } from "../utils/weak-maps.ts";
 import { RestoreDOM } from "./restore-dom/restore-dom.tsx";
-import { AndroidInputManager } from "../hooks/android-input-manager/android-input-manager.ts";
 
 type DeferredOperation = () => void;
 
@@ -124,7 +121,7 @@ export type EditableProps = {
   renderLeaf?: (props: RenderLeafProps) => JSX.Element;
   renderPlaceholder?: (props: RenderPlaceholderProps) => JSX.Element;
   scrollSelectionIntoView?: (editor: ReactEditor, domRange: DOMRange) => void;
-  as?: FunctionalComponent;
+  as?: FunctionComponent;
   disableDefaultStyles?: boolean;
 } & JSX.IntrinsicElements["textarea"];
 

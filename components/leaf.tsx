@@ -1,22 +1,21 @@
 import React, {
+  JSX,
   MutableRefObject,
   useCallback,
   useEffect,
   useRef,
   useState,
 } from "react";
-import { JSX } from "react";
 import { Element, Text } from "slate";
-import { ResizeObserver as ResizeObserverPolyfill } from "@juggle/resize-observer";
-import String from "./string.tsx";
+import { ResizeObserver as ResizeObserverPolyfill } from "../deps.ts";
+import { useSlateStatic } from "../hooks/use-slate-static.tsx";
+import { IS_ANDROID, IS_WEBKIT } from "../utils/environment.ts";
 import {
-  EDITOR_TO_FORCE_RENDER,
   EDITOR_TO_PLACEHOLDER_ELEMENT,
   PLACEHOLDER_SYMBOL,
 } from "../utils/weak-maps.ts";
 import { RenderLeafProps, RenderPlaceholderProps } from "./editable.tsx";
-import { useSlateStatic } from "../hooks/use-slate-static.tsx";
-import { IS_ANDROID, IS_WEBKIT } from "../utils/environment.ts";
+import String from "./string.tsx";
 
 // Delay the placeholder on Android to prevent the keyboard from closing.
 // (https://github.com/ianstormtaylor/slate/pull/5368)
